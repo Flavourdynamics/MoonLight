@@ -52,7 +52,7 @@
 	let wifiStatus: WifiStatus = $state();
 	let wifiSettings: WifiSettings = $state();
 
-	let dndNetworkList: KnownNetworkItem[] = $state([]);
+	// 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 
 	let showWifiDetails = $state(false);
 
@@ -113,7 +113,7 @@
 		} catch (error) {
 			console.error('Error:', error);
 		}
-		dndNetworkList = wifiSettings.wifi_networks;
+		// 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 		return wifiSettings;
 	}
 
@@ -149,8 +149,7 @@
 			formErrorhostname = true;
 		} else {
 			formErrorhostname = false;
-			// Update global wifiSettings object
-			wifiSettings.wifi_networks = dndNetworkList;
+			// 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 			// Post to REST API
 			postWiFiSettings(wifiSettings);
 		}
@@ -222,13 +221,14 @@
 		}
 		// Submit JSON to REST API
 		if (valid) {
+			// 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 			if (newNetwork) {
-				dndNetworkList.push(networkEditable);
+				wifiSettings.wifi_networks.push(networkEditable);
 			} else {
-				dndNetworkList.splice(dndNetworkList.indexOf(networkEditable), 1, networkEditable);
+				wifiSettings.wifi_networks.splice(wifiSettings.wifi_networks.indexOf(networkEditable), 1, networkEditable);
 			}
 			addNetwork();
-			dndNetworkList = [...dndNetworkList]; //Trigger reactivity
+			wifiSettings.wifi_networks = [...wifiSettings.wifi_networks]; //Trigger reactivity
 			showNetworkEditor = false;
 		}
 	}
@@ -261,7 +261,7 @@
 	function handleEdit(index: number) {
 		newNetwork = false;
 		showNetworkEditor = true;
-		networkEditable = dndNetworkList[index];
+		networkEditable = wifiSettings.wifi_networks[index]; // 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 	}
 
 	function confirmDelete(index: number) {
@@ -274,12 +274,12 @@
 			},
 			onConfirm: () => {
 				// Check if network is currently been edited and delete as well
-				if (dndNetworkList[index].ssid === networkEditable.ssid) {
+				if (wifiSettings.wifi_networks[index].ssid === networkEditable.ssid) { // 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 					addNetwork();
 				}
 				// Remove network from array
-				dndNetworkList.splice(index, 1);
-				dndNetworkList = [...dndNetworkList]; //Trigger reactivity
+				wifiSettings.wifi_networks.splice(index, 1);
+				wifiSettings.wifi_networks = [...wifiSettings.wifi_networks]; //Trigger reactivity
 				showNetworkEditor = false;
 				modals.close();
 			}
@@ -287,7 +287,7 @@
 	}
 
 	function checkNetworkList() {
-		if (dndNetworkList.length >= 5) {
+		if (wifiSettings.wifi_networks.length >= 5) { // 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
 			modals.open(InfoDialog, {
 				title: 'Reached Maximum Networks',
 				message:
@@ -308,8 +308,9 @@
 			return;
 		}
 
-		dndNetworkList = reorder(dndNetworkList, from.index, to.index);
-		console.log(dndNetworkList);
+		// 🌙 remove dndNetworkList, use wifiSettings.wifi_networks
+		wifiSettings.wifi_networks = reorder(wifiSettings.wifi_networks, from.index, to.index);
+		console.log(wifiSettings.wifi_networks);
 	}
 
 	function preventDefault(fn) {
@@ -517,7 +518,7 @@
 							id="networks"
 							type={VerticalDropZone}
 							itemSize={60}
-							itemCount={dndNetworkList.length}
+							itemCount={wifiSettings.wifi_networks.length}
 							on:drop={onDrop}
 						>
 							{#snippet children({ index })}
@@ -527,7 +528,7 @@
 										<Router class="text-primary-content h-auto w-full scale-75" />
 									</div>
 									<div>
-										<div class="font-bold">{dndNetworkList[index].ssid}</div>
+										<div class="font-bold">{wifiSettings.wifi_networks[index].ssid}</div>
 									</div>
 									{#if !page.data.features.security || $user.admin}
 										<div class="grow"></div>

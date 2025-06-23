@@ -18,7 +18,7 @@
 	let heapChartElement: HTMLCanvasElement = $state();
 	let heapChart: Chart;
 
-	let psramChartElement: HTMLCanvasElement = $state();
+	let psramChartElement: HTMLCanvasElement = $state(); // 🌙
 	let psramChart: Chart;
 
 	let filesystemChartElement: HTMLCanvasElement = $state();
@@ -99,15 +99,15 @@
 				labels: $analytics.uptime,
 				datasets: [
 					{
-						label: 'Free Heap',
+						label: 'Used', // 🌙
 						borderColor: daisyColor('--color-primary'),
 						backgroundColor: daisyColor('--color-primary', 50),
 						borderWidth: 2,
-						data: $analytics.free_heap,
+						data: $analytics.used_heap, // 🌙
 						yAxisID: 'y'
 					},
 					{
-						label: 'Max Alloc Heap',
+						label: 'Max Alloc',
 						borderColor: daisyColor('--color-secondary'),
 						backgroundColor: daisyColor('--color-secondary', 50),
 						borderWidth: 2,
@@ -147,7 +147,7 @@
 						type: 'linear',
 						title: {
 							display: true,
-							text: 'Heap [kb]',
+							text: 'Memory [KB]', // 🌙
 							color: daisyColor('--color-base-content'),
 							font: {
 								size: 16,
@@ -156,7 +156,73 @@
 						},
 						position: 'left',
 						min: 0,
-						max: Math.round($analytics.total_heap[0]),
+						max: Math.round(Math.max(...$analytics.total_heap)), // 🌙
+						grid: { color: daisyColor('--color-base-content', 10) },
+						ticks: {
+							color: daisyColor('--color-base-content')
+						},
+						border: { color: daisyColor('--color-base-content', 10) }
+					}
+				}
+			}
+		});
+		// 🌙
+		psramChart = new Chart(psramChartElement, {
+			type: 'line',
+			data: {
+				labels: $analytics.uptime,
+				datasets: [
+					{
+						label: 'Used',
+						borderColor: daisyColor('--color-primary'),
+						backgroundColor: daisyColor('--color-primary', 50),
+						borderWidth: 2,
+						data: $analytics.used_psram,
+						yAxisID: 'y'
+					}
+				]
+			},
+			options: {
+				maintainAspectRatio: false,
+				responsive: true,
+				plugins: {
+					legend: {
+						display: true
+					},
+					tooltip: {
+						mode: 'index',
+						intersect: false
+					}
+				},
+				elements: {
+					point: {
+						radius: 1
+					}
+				},
+				scales: {
+					x: {
+						grid: {
+							color: daisyColor('--color-base-content', 10)
+						},
+						ticks: {
+							color: daisyColor('--color-base-content')
+						},
+						display: false
+					},
+					y: {
+						type: 'linear',
+						title: {
+							display: true,
+							text: 'PSRAM [KB]',
+							color: daisyColor('--color-base-content'),
+							font: {
+								size: 16,
+								weight: 'bold'
+							}
+						},
+						position: 'left',
+						min: 0,
+						max: Math.round(Math.max(...$analytics.psram_size)),
 						grid: { color: daisyColor('--color-base-content', 10) },
 						ticks: {
 							color: daisyColor('--color-base-content')
@@ -172,7 +238,7 @@
 				labels: $analytics.uptime,
 				datasets: [
 					{
-						label: 'File System Used',
+						label: 'Used', // 🌙
 						borderColor: daisyColor('--color-primary'),
 						backgroundColor: daisyColor('--color-primary', 50),
 						borderWidth: 2,
@@ -212,7 +278,7 @@
 						type: 'linear',
 						title: {
 							display: true,
-							text: 'File System [kb]',
+							text: 'File System [KB]', // 🌙
 							color: daisyColor('--color-base-content'),
 							font: {
 								size: 16,
@@ -221,7 +287,7 @@
 						},
 						position: 'left',
 						min: 0,
-						max: Math.round($analytics.fs_total[0]),
+						max: Math.round(Math.max(...$analytics.fs_total)), // 🌙
 						grid: { color: daisyColor('--color-base-content', 10) },
 						ticks: {
 							color: daisyColor('--color-base-content')
@@ -308,13 +374,23 @@
 		lpsChart.options.scales.y.max = Math.round(Math.max(...$analytics.lps));
 
 		heapChart.data.labels = $analytics.uptime;
-		heapChart.data.datasets[0].data = $analytics.free_heap;
+		heapChart.data.datasets[0].data = $analytics.used_heap; // 🌙
 		heapChart.data.datasets[1].data = $analytics.max_alloc_heap;
 		heapChart.update('none');
+		heapChart.options.scales.y.max = Math.round(Math.max(...$analytics.total_heap)); // 🌙
+
+		// 🌙
+		if (Math.max(...$analytics.psram_size)) {
+			psramChart.data.labels = $analytics.uptime;
+			psramChart.data.datasets[0].data = $analytics.used_psram;
+			psramChart.update('none');
+			psramChart.options.scales.y.max = Math.round(Math.max(...$analytics.psram_size));
+		}
 
 		filesystemChart.data.labels = $analytics.uptime;
 		filesystemChart.data.datasets[0].data = $analytics.fs_used;
 		filesystemChart.update('none');
+		filesystemChart.options.scales.y.max = Math.round(Math.max(...$analytics.fs_total)); // 🌙
 
 		temperatureChart.data.labels = $analytics.uptime;
 		temperatureChart.data.datasets[0].data = $analytics.core_temp;
@@ -374,6 +450,17 @@
 			<canvas bind:this={heapChartElement}></canvas>
 		</div>
 	</div>
+	<!-- 🌙 PSRAM -->
+	{#if (Math.max(...$analytics.psram_size))}
+		<div class="w-full overflow-x-auto">
+			<div
+				class="flex w-full flex-col space-y-1 h-60"
+				transition:slide|local={{ duration: 300, easing: cubicOut }}
+			>
+				<canvas bind:this={psramChartElement}></canvas>
+			</div>
+		</div>
+	{/if}
 	<div class="w-full overflow-x-auto">
 		<div
 			class="flex w-full flex-col space-y-1 h-52"
